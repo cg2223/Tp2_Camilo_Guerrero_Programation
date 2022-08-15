@@ -1,0 +1,84 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public enum BlockColor
+{
+    Green,
+    Red
+
+}
+
+public class Block : MonoBehaviour
+{
+    public BlockColor color;
+
+    public GameObject brokenBlockLeft;
+    public GameObject brokenBlockRight;
+    public float brokenBlockForce;
+    public float brokenBlockTorque;
+    public float brokenBlockDestroyDelay;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("SwordRed"))
+        {
+            if (color == BlockColor.Red && GameManager.instance.rightSwordTracker.velocity.magnitude >= GameManager.instance.swordHitVelocityThreshold)
+            {
+                //ajouter score
+                GameManager.instance.AddScore();
+            }
+            else
+            {
+                //Quiter vie
+                GameManager.instance.HitWrongBlock();
+            }
+            Hit();
+        }
+        else if (other.CompareTag("SwordGreen"))
+        {
+            if (color == BlockColor.Green && GameManager.instance.leftSwordTracker.velocity.magnitude >= GameManager.instance.swordHitVelocityThreshold)
+            {
+                //ajouter score
+                GameManager.instance.AddScore();
+            }
+            else
+            {
+                //Quiter vie
+                GameManager.instance.HitWrongBlock();
+            }
+            Hit();
+        }
+    }
+
+    public void Hit()
+    {
+        // crée les morceaux brisés
+        brokenBlockLeft.SetActive(true);
+        brokenBlockRight.SetActive(true);
+
+        //retirer les enfants
+        brokenBlockLeft.transform.parent = null;
+        brokenBlockRight.transform.parent = null;
+
+        //ajoutez-leur la force
+        Rigidbody leftRig = brokenBlockLeft.GetComponent<Rigidbody>();
+        Rigidbody rightRig = brokenBlockRight.GetComponent<Rigidbody>();
+
+        var right = transform.right;
+        leftRig.AddForce(-right * brokenBlockForce, ForceMode.Impulse);
+        rightRig.AddForce(right * brokenBlockForce, ForceMode.Impulse);
+
+        // ajouter un couple 
+        var forward = transform.forward;
+        leftRig.AddTorque(-transform.forward * brokenBlockTorque, ForceMode.Impulse);
+        rightRig.AddTorque(-transform.forward * brokenBlockTorque, ForceMode.Impulse);
+
+        //détruire les pièces cassées après quelques secondes
+        Destroy(brokenBlockLeft, brokenBlockDestroyDelay);
+        Destroy(brokenBlockRight, brokenBlockDestroyDelay);
+
+        //détruire le bloc principal
+        Destroy(gameObject);
+    }
+}
